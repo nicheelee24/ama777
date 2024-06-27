@@ -13,169 +13,154 @@ const Bet = require("../../models/Bet");
 const Bigp = require("../../models/Bigp");
 
 
-router.post("/bigpay-deposit", async(req,res)=>{
-var merchantcod='T888THB';
- var itmid='inv-342122';
- var curr='THB';
- var amt='150.00';
- 
- var preHASH=merchantcod+itmid+curr+amt;
 
- var hashh=require('crypto').createHash('md5').update(preHASH).digest("hex");
-
- 
- //var HASH=CryptoJS.MD5(preHASH).toString();
-console.log(hashh);
+router.post("/bigpay", async (req,res) => {
     try {
-      
-        
-    console.log("bigpay-deposit function called");
-        const host = "payin-api.bigpayz.net"; // Replace with the domain of your site.
-        const payinApiUrl = `https://${host}/Payin/DepositV2`;
-    
-        const payload = {
-          MerchantCode:req.MerchantCode,
-          ReturnURL:req.ReturnURL,
-          FailedReturnURL:req.FailedReturnURL,
-          HTTPPostURL:req.HTTPPostURL,
-          Amount:req.Amount,
-          Currency:req.Currency,
-          ItemID:req.ItemID,
-          ItemDescription:req.ItemDescription,
-          PlayerId:req.PlayerId,
-          Hash:req.Hash
-          
-        };
-        console.log(payload);
-    
-        const headers = {
-          'Authorization': 'Basic c2/q1h2lATZcLyZ9n5Y+LlHlm2aZ9p5E8d5iYlRLqZQ=' //replace with your API key
-        };
-    
-    
-        try { 
-          const response = await axios.post(payinApiUrl, payload, {headers});
-          console.log("big pay response.."+response.data.status);
-          const Data = response.data;
-          
-          const newTransaction = new Bigp({
-            ...Data,
-            MerchantCode,
-            ReturnURL,
-            FailedReturnURL,
-            HTTPPostURL,
-            ItemID,
-            ItemDescription,
-            PlayerId,
-            Hash,
-            BankCode,
-            SenderVerification,
-            ClientFullName,
-            Message: "Transaction Successful!"
-          });
-    
-          //save the transaction to the database
-          await newTransaction.save();
-    
-          res.json(Data);
-        } catch (error) {
-          // Handle errors from the external API call
-          console.error('Error calling API:', error.message);
-          if (error.response) {
-            // If the error response is available, use its status code
-            res.status(error.response.status).json({ error: error.response.data });
-          } else {
-            // Fallback to a generic 500 status code if no response is available
-            res.status(500).json({ error: 'Failed to process payment' });
-          }
-        }
-      } catch (error) {
-        // Handle any other errors in the outer try-catch block
-        console.error('Internal server error:', error.message);
-        res.status(500).json({ success: false, error: error.message });
-      }
 
-})
+        console.log(req.body);
+        console.log("bigpay deposit function called..");
+        const merchant_code = process.env.MerchantCode;
+        const ref_id = '1122';
+        const player_username = 'player1';
+        const player_ip = '152.42.177.61';
+        const currency_code = process.env.Currency;
+        const amount = '1000.00';
+        const lang = process.env.LANGUAGE;
+        const client_url = process.env.CLient_url;
+        const view = process.env.VIEW;
+        
+        
+
+        const DEPOSIT_URL = `https://promptpay-api.bigpayz.net/BankBot/QRScanDeposit`;
+        const HASH = merchant_code+ref_id+player_username+player_ip+currency_code+amount+client_url;
+        //console.log(HASH);
+
+       
+        const hashh = require('crypto').createHmac('sha256', "c2/q1h2lATZcLyZ9n5Y+LlHlm2aZ9p5E8d5iYlRLqZQ=").update(HASH).digest().toString('hex');
+
+       
+        await axios
+            .post(
+                DEPOSIT_URL,
+                {
+                    merchant_code: merchant_code,
+                    ref_id: ref_id,
+                    player_username: player_username,
+                    player_ip: player_ip,
+                    currency_code: currency_code,
+                    amount:amount,
+                    lang: lang,
+                   client_url: client_url,
+                    view: view,
+                    hash: hashh,
+                    
+
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        // "authorization": HASH,
+
+                        
+                        //"api-key": _key,
+                        //"time": current_time
+                        Authorization: `Basic ${process.env.BIGPAY_KEY}`,
+                    },
+                }
+            )
+            .then(function (res) {
+                
+                var myJSON = JSON.stringify(res.data)
+                console.log("response..." + myJSON);
+                if (res.data.httpCode == 200) {
+                   
+
+                    //  try {
+                    // let transaction = new Transaction({
+                    //     userid: req.user.id,
+                    //     clientCode: process.env.CLIENT_CODE,
+                    //     payAmount: resp.requestAmount,
+                    //     trxNo: resp.orderNo,
+                    //     sign: resp.sign,
+                    //     status: resp.status,
+                    //     type: "deposit",
+                    //     platform: platform,
+                    //  });
+                    // transaction.save();
+
+                    // User.findById(req.user.id)
+                    //     .then((user) => {
+                    //         user.balance =
+                    //             Number(user.balance) +
+                    //             Number(resp.requestAmount);
+                    //         user.save();
+                    //         console.log("user balance updated");
+                    //     })
+                    // .catch((err) => {
+                    //     console.log(
+                    //         "/user balance update error user",
+                    //         err
+                    //     );
+                    // });
+                    //   } catch (ex) {
+                    //console.log("/deposit error", ex);
+                    //  }
+
+                    //   res.send({ payUrl: resp.payUrl });
+
+
+
+                    // res.json({ status: "0000"});
+                } else {
+                    console.log("errrrorororoor");
+                }
+            });
+        }
+        catch(ex)
+        {
+            console.log(ex);
+        }
+   
+});
 
 router.post("/deposit", auth, async (req, res) => {
     try {
 
         console.log("deposit function called..");
-       const { amount, currency, platform } = req.body;
-       // console.log(req.body);
-      const user = await User.findById(req.user.id).select("-password");
-      const DEPOSIT_URL = `${process.env.PMG_BASE_URL}/api/v1/Payment/Deposit`;
-      
-//console.log(DEPOSIT_URL);
+        const { amount, currency, platform } = req.body;
 
+        const user = await User.findById(req.user.id).select("-password");
+        const DEPOSIT_URL = `${process.env.PMG_BASE_URL}/api/v1/Payment/Deposit`;
 
-//var current_time=Math.round((new Date()).getTime() / 1000);
- //var secret='SC2629eb1e986556185720';
- //var _key='AK61139a76cf3a83118dee';
- //var preHASH="#" + current_time + "@" + secret + "#";
- //var HASH=CryptoJS.MD5(preHASH).toString();
-//console.log(HASH);
-//console.log(current_time);
-
-
-console.log("Deposit URL:"+DEPOSIT_URL);
-console.log("ClientCode:"+process.env.CLIENT_CODE);
-console.log("memberFlag:"+user.name);
-console.log("Amount:"+amount);
-console.log("hrefbackurl:https://ama777.cloud");
         await axios
             .post(
                 DEPOSIT_URL,
                 {
                     clientCode: process.env.CLIENT_CODE,
                     memberFlag: user.name,
-                    amount:amount,
+                    amount: amount,
                     hrefbackUrl:
                         platform == "ama777agent"
                             ? "https://ama777.cloud"
                             : "https://ama777.cloud",
 
-                    // orderNo:1122334455,
-                    // paymentMethod:'QRPAYMENT',
-                    // currency:'CNY',
-                    // orderAmount: amount,
-                    // productName:'Deposit',
-                    // trafficType:'Gaming',
-                    // callbackUrl:'https://dotbet-backend.6o1yzt.easypanel.host',
-                    // redirectUrl:'https://dotbet-backend.6o1yzt.easypanel.host',
-                    // ipAddress:'89.116.38.135',
-                    // source:'website',
-                    // clientFirstName:'john',
-                    // clientLastName:'D',
-                    // clientEmail:'koiescafe@gmail.com',
-                    // clientPhone:'9898989898',
-
                 },
                 {
                     headers: {
                         "Content-Type": "application/json",
-                       // "authorization": HASH,
- 
+                        // "authorization": HASH,
+
                         "Accept": "application/json",
                         //"api-key": _key,
                         //"time": current_time
-                       Authorization: `Bearer ${process.env.TESLLA_PAY_TOKEN}`,
+                        Authorization: `Bearer ${process.env.TESLLA_PAY_TOKEN}`,
                     },
                 }
             )
             .then(function (response) {
-                console.log("response..."+response);
+                console.log("response..." + response);
                 if (response.data.httpCode == 200) {
-                //    console.log("response.."+response);
                     const resp = response.data.data;
-
-                    // callbackUrl: "http://dotbet.co"
-                    // hrefbackUrl: "http://dotbet.co"
-                    // orderNo: "TRXZCZO0000208"
-                    // payUrl: "https://ppypayment.xyzonline.app/3fGXsTdZhAFVFgmJNOWu"
-                    // requestAmount: 100
-                    // sign: "0bc4c6f7d059cff702872938736dafd7"
-                    // status: "CREATE"
 
                     try {
                         let transaction = new Transaction({
@@ -189,8 +174,7 @@ console.log("hrefbackurl:https://ama777.cloud");
                             platform: platform,
                         });
                         transaction.save();
-console.log("transaction saved");
-console.log(Number(resp.requestAmount));
+
                         User.findById(req.user.id)
                             .then((user) => {
                                 user.balance =
@@ -211,13 +195,7 @@ console.log(Number(resp.requestAmount));
 
                     res.send({ payUrl: resp.payUrl });
 
-                    // const io = getIo();
 
-                    // io.emit('newPage',
-                    // {
-                    //   page: '_blank',
-                    //   payUrl: resp.payUrl
-                    // });
 
                     // res.json({ status: "0000"});
                 } else {
@@ -225,13 +203,13 @@ console.log(Number(resp.requestAmount));
                 }
             });
     } catch (ex) {
-        console.log("Error Exception On Deposit"+ex);
+        console.log("Error Exception On Deposit" + ex);
     }
 });
 
 router.post("/withdraw", auth, async (req, res) => {
     try {
-       
+
         const { amount, platform } = req.body;
         console.log(req.body);
         const user = await User.findById(req.user.id).select("-password");
@@ -248,14 +226,14 @@ router.post("/withdraw", auth, async (req, res) => {
 
         // Start Check turnover
         // check playing amount should be over withdrawal amount.
-        console.log("user data>"+user);
-       
-                console.log("user data not empty");
-       const result = await Bet.aggregate([
+        console.log("user data>" + user);
+
+        console.log("user data not empty");
+        const result = await Bet.aggregate([
             {
-                
+
                 $match: {
-                    
+
                     userId: user.name,
                     // action: { $in: ["bet", "betNSettle"] }, // Filters documents to include only those where action is either 'bet' or 'betNSettle'
                 },
@@ -267,10 +245,10 @@ router.post("/withdraw", auth, async (req, res) => {
                 },
             },
         ]);
-        console.log("resuuulttt"+result);
-        console.log("result length"+result.length);
-  
-   // console.log("resultt value...>"+resultt);
+        console.log("resuuulttt" + result);
+        console.log("result length" + result.length);
+
+        // console.log("resultt value...>"+resultt);
 
         let totalBetAmount = 0;
         if (result.length > 0) {
@@ -503,55 +481,54 @@ router.post("/withdraw_callback", async (req, res) => {
 });
 
 router.post("/balance", auth, async (req, res) => {
-    let balance =0;
-    let result=null;
-    let resultTrans=null;
-    console.log("usser id...."+req.user.id);
+    let balance = 0;
+    let result = null;
+    let resultTrans = null;
+    console.log("usser id...." + req.user.id);
     const user = await User.findById(req.user.id);
     const trans = await Transaction.findById(req.user.id);
-    console.log("user data..."+user);
-    console.log("transactin data..."+trans);
-    if(user)
-        {
-     balance = user.balance ? user.balance : 0;
-       console.log("balance amaount...."+balance);
+    console.log("user data..." + user);
+    console.log("transactin data..." + trans);
+    if (user) {
+        balance = user.balance ? user.balance : 0;
+        console.log("balance amaount...." + balance);
 
-    console.log("user id..."+user._id);
-    result = await Bet.aggregate([
-        {
-            $match: {
-                userId: user.name,
-                // action: { $in: ["bet", "betNSettle"] }, // Filters documents to include only those where action is either 'bet' or 'betNSettle'
+        console.log("user id..." + user._id);
+        result = await Bet.aggregate([
+            {
+                $match: {
+                    userId: user.name,
+                    // action: { $in: ["bet", "betNSettle"] }, // Filters documents to include only those where action is either 'bet' or 'betNSettle'
+                },
             },
-        },
-        {
-            $group: {
-                _id: null, // Grouping by null means aggregating all documents together
-                totalBetAmount: { $sum: "$turnover" }, // Sums up all betAmount values
+            {
+                $group: {
+                    _id: null, // Grouping by null means aggregating all documents together
+                    totalBetAmount: { $sum: "$turnover" }, // Sums up all betAmount values
+                },
             },
-        },
-    ]);
+        ]);
 
-    resultTrans = await Transaction.aggregate([
-        {
-            $match: {
-                userid: user._id,
-                 action: { $in: ["type", "deposit"] }, // Filters documents to include only those where action is either 'bet' or 'betNSettle'
+        resultTrans = await Transaction.aggregate([
+            {
+                $match: {
+                    userid: user._id,
+                    action: { $in: ["type", "deposit"] }, // Filters documents to include only those where action is either 'bet' or 'betNSettle'
+                },
             },
-        },
-        {
-            $group: {
-                _id: null, // Grouping by null means aggregating all documents together
-                totalTransAmount: { $sum: "$payAmount" }, // Sums up all betAmount values
+            {
+                $group: {
+                    _id: null, // Grouping by null means aggregating all documents together
+                    totalTransAmount: { $sum: "$payAmount" }, // Sums up all betAmount values
+                },
             },
-        },
-    ]);
-}
+        ]);
+    }
 
     let totalBetAmount = 0;
-    console.log("bet total result.."+result);
-    console.log("transaction amount..deposit.."+resultTrans);
-    
+    console.log("bet total result.." + result);
+    console.log("transaction amount..deposit.." + resultTrans);
+
     if (result.length > 0) {
         console.log("Total Bet Amount:", result[0].totalBetAmount);
         totalBetAmount = result[0].totalBetAmount;
@@ -657,17 +634,16 @@ router.post("/awc_hook", async (req, res) => {
         const user = await User.findOne({
             phone: getPhoneNumber(req_val["userId"]),
         });
-       // console.log("User balance", user.balance);
-if(user!=null)
-    {
-        response = {
-            status: "0000",
-            desc: req_val["userId"] + "baht User Balance",
-            balance: user.balance,
-            balanceTs: new Date().toISOString(),
-            userId: req_val["userId"],
-        };
-    }
+        // console.log("User balance", user.balance);
+        if (user != null) {
+            response = {
+                status: "0000",
+                desc: req_val["userId"] + "baht User Balance",
+                balance: user.balance,
+                balanceTs: new Date().toISOString(),
+                userId: req_val["userId"],
+            };
+        }
     } else if (req_val["action"] == "betNSettle") {
         // Update user balances
         await Promise.all(
