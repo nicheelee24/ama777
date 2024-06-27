@@ -20,7 +20,7 @@ router.post("/bigpay", async (req,res) => {
         console.log(req.body);
         console.log("bigpay deposit function called..");
         const merchant_code = process.env.MerchantCode;
-        const ref_id = '1122';
+        const ref_id = '11122';
         const player_username = 'player1';
         const player_ip = '152.42.177.61';
         const currency_code = process.env.Currency;
