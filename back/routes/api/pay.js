@@ -20,9 +20,9 @@ router.post("/bigpay", async (req,res) => {
         console.log(req.body);
         console.log("bigpay deposit function called..");
         const merchant_code = process.env.MerchantCode;
-        const ref_id = '11122';
+        const ref_id = '3vghdg';
         const player_username = 'player1';
-        const player_ip = '152.42.177.61';
+        const player_ip = '223.178.208.222';
         const currency_code = process.env.Currency;
         const amount = '1000.00';
         const lang = process.env.LANGUAGE;
@@ -68,11 +68,11 @@ router.post("/bigpay", async (req,res) => {
                     },
                 }
             )
-            .then(function (res) {
+            .then(function (resonse) {
                 
-                var myJSON = JSON.stringify(res.data)
+                var myJSON = JSON.stringify(resonse.data)
                 console.log("response..." + myJSON);
-                if (res.data.httpCode == 200) {
+                if (resonse.data.httpCode > 200) {
                    
 
                     //  try {
@@ -111,8 +111,12 @@ router.post("/bigpay", async (req,res) => {
 
 
                     // res.json({ status: "0000"});
+                    const resp = response.data; 
+                    console.log("resulttt----->"+resp);
+                    res.send({ payUrl: resp.redirect_to });
                 } else {
                     console.log("errrrorororoor");
+                   
                 }
             });
         }
@@ -141,8 +145,8 @@ router.post("/deposit", auth, async (req, res) => {
                     amount: amount,
                     hrefbackUrl:
                         platform == "ama777agent"
-                            ? "https://ama777.cloud"
-                            : "https://ama777.cloud",
+                            ? "https://amma-front-xy5tg.ondigitalocean.app"
+                            : "https://amma-front-xy5tg.ondigitalocean.app",
 
                 },
                 {

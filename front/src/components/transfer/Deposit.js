@@ -50,34 +50,21 @@ export default function Deposit({ open, setOpen, type, setType }) {
         const config = {
             headers: {
                 "content-type": "application/json",
-                'Authorization': 'Basic NWZiUnBoUWl1ZEVBTEZoVUM0QnEyTzBselBPTElhS0Q6'
-               // "x-auth-token": window.localStorage.getItem("token"),
+               // 'Authorization': 'Basic NWZiUnBoUWl1ZEVBTEZoVUM0QnEyTzBselBPTElhS0Q6'
+                "x-auth-token": window.localStorage.getItem("token"),
             },
         };
-          const url = process.env.REACT_APP_BACKEND + "/api/pay/bigpay-deposit";
+          const url = process.env.REACT_APP_BACKEND + "/api/pay/deposit";
        // const url = process.env.REACT_APP_BACKEND + "/api/pay/bigpay-deposit";
 
         await axios
             .post(
                 url,
                 {
-                  //  MerchantCode:"T888THB",
-                    ReturnURL:"https://games-amma.n10hxr.easypanel.host/",
-                    FailedReturnURL:"https://games-amma.n10hxr.easypanel.host/",
-                    HTTPPostURL:"https://games-amma.n10hxr.easypanel.host/",
-                    Amount:100,
-                    Currency:"CNY",
-                    ItemID:"Deposit",
-                    ItemDescription:"test deposit",
-                    PlayerId:"1234",
-                    Hash:"NWZiUnBoUWl1ZEVBTEZoVUM0QnEyTzBselBPTElhS0Q6",
-                    BankCode:"CIMB",
-                    SenderVerification:1,
-                    ClientFullName:"T888THB",
-                    //c2/q1h2lATZcLyZ9n5Y+LlHlm2aZ9p5E8d5iYlRLqZQ=
-                    //amount: amountRef.current.value,
-                    //currency: "baht",
-                    //platform: process.env.REACT_APP_PLATFORM,
+                  
+                    amount: amountRef.current.value,
+                    currency: "baht",
+                    platform: process.env.REACT_APP_PLATFORM,
                 },
                 config
             )
