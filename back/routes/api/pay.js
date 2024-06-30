@@ -145,8 +145,8 @@ router.post("/deposit", auth, async (req, res) => {
                     amount: amount,
                     hrefbackUrl:
                         platform == "ama777agent"
-                            ? "https://amma-front-xy5tg.ondigitalocean.app"
-                            : "https://amma-front-xy5tg.ondigitalocean.app",
+                            ? "https://amma-front-xy5tg.ondigitalocean.app/api/pay/deposit_callback"
+                            : "https://amma-front-xy5tg.ondigitalocean.app/api/pay/deposit_callback",
 
                 },
                 {
@@ -170,7 +170,7 @@ router.post("/deposit", auth, async (req, res) => {
                         let transaction = new Transaction({
                             userid: req.user.id,
                             clientCode: process.env.CLIENT_CODE,
-                            payAmount: resp.requestAmount,
+                            payAmount: 0,
                             trxNo: resp.orderNo,
                             sign: resp.sign,
                             status: resp.status,
@@ -357,6 +357,7 @@ router.post("/deposit_callback", async (req, res) => {
     const filter = { trxNo: clientNo }; // Find a document with this condition
     console.log("deposit_callback");
 
+    console.log(req.body);
     if (status == "PAID") {
         // + balance of the user
         let trx = await Transaction.findOne(filter);
