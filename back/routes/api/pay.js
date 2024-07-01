@@ -170,7 +170,7 @@ router.post("/deposit", auth, async (req, res) => {
                         let transaction = new Transaction({
                             userid: req.user.id,
                             clientCode: process.env.CLIENT_CODE,
-                            payAmount: 0,
+                            payAmount: resp.requestAmount,
                             trxNo: resp.orderNo,
                             sign: resp.sign,
                             status: resp.status,
