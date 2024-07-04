@@ -14,7 +14,7 @@ const Bigp = require("../../models/Bigp");
 
 
 
-router.post("/bigpay", async (req,res) => {
+router.post("/bigpay", async (req, res) => {
     try {
 
         console.log(req.body);
@@ -28,17 +28,18 @@ router.post("/bigpay", async (req,res) => {
         const lang = process.env.LANGUAGE;
         const client_url = process.env.CLient_url;
         const view = process.env.VIEW;
-        
-        
+
+
 
         const DEPOSIT_URL = `https://promptpay-api.bigpayz.net/BankBot/QRScanDeposit`;
-        const HASH = merchant_code+ref_id+player_username+player_ip+currency_code+amount+client_url;
-        //console.log(HASH);
+        const HASH = merchant_code + ref_id + player_username + player_ip + currency_code + amount + client_url;
 
-       
-        const hashh = require('crypto').createHmac('sha256', "c2/q1h2lATZcLyZ9n5Y+LlHlm2aZ9p5E8d5iYlRLqZQ=").update(HASH).digest().toString('hex');
 
-       
+
+
+        const hashh = require('crypto').createHash('md5', "2794398D881A4AAA8A3EB141232DEAD9").update(HASH).digest().toString('hex');
+
+
         await axios
             .post(
                 DEPOSIT_URL,
@@ -48,12 +49,12 @@ router.post("/bigpay", async (req,res) => {
                     player_username: player_username,
                     player_ip: player_ip,
                     currency_code: currency_code,
-                    amount:amount,
+                    amount: amount,
                     lang: lang,
-                   client_url: client_url,
+                    client_url: client_url,
                     view: view,
                     hash: hashh,
-                    
+
 
                 },
                 {
@@ -61,7 +62,7 @@ router.post("/bigpay", async (req,res) => {
                         "Content-Type": "application/json",
                         // "authorization": HASH,
 
-                        
+
                         //"api-key": _key,
                         //"time": current_time
                         Authorization: `Basic ${process.env.BIGPAY_KEY}`,
@@ -69,11 +70,11 @@ router.post("/bigpay", async (req,res) => {
                 }
             )
             .then(function (resonse) {
-                
+
                 var myJSON = JSON.stringify(resonse.data)
                 console.log("response..." + myJSON);
                 if (resonse.data.httpCode > 200) {
-                   
+
 
                     //  try {
                     // let transaction = new Transaction({
@@ -111,20 +112,19 @@ router.post("/bigpay", async (req,res) => {
 
 
                     // res.json({ status: "0000"});
-                    const resp = response.data; 
-                    console.log("resulttt----->"+resp);
+                    const resp = response.data;
+                    console.log("resulttt----->" + resp);
                     res.send({ payUrl: resp.redirect_to });
                 } else {
                     console.log("errrrorororoor");
-                   
+
                 }
             });
-        }
-        catch(ex)
-        {
-            console.log(ex);
-        }
-   
+    }
+    catch (ex) {
+        console.log(ex);
+    }
+
 });
 
 router.post("/deposit", auth, async (req, res) => {
