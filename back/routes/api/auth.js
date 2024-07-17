@@ -11,8 +11,9 @@ const User = require("../../models/User");
 // @route    GET api/auth
 // @desc     Get user by token
 // @access   Private
-router.get("/", auth, async (req, res) => {
+router.get("/",auth, async (req, res) => {
     try {
+        console.log("auth function called.....");
         const user = await User.findById(req.user.id).select("-password -rpwd");
         res.json(user);
     } catch (err) {
@@ -137,7 +138,7 @@ async function registerToSBO(username, platform) {
         console.log("sbo response-", response.data);
         return response.data;
     } catch (error) {
-        console.error("auth~~~request~~~: " + error);
+        console.error("auth~~~requesttttttt~~~: " + error);
         throw error; // or return an error object
     }
 }
@@ -174,22 +175,39 @@ router.post(
                     .status(400)
                     .json({ errors: [{ msg: "Invalid Credentials2" }] });
             }
+            const payload = {
+                user: {
+                    id: user.id,
+                },
+            };
+
+            const token = jwt.sign(payload, process.env.JWT_SECRET, {
+                expiresIn: "5 days",
+            });
+            const user_phone=user.phone;
+
+            res.json({ status: "0000", token, user_phn: user_phone });
+            //res.json({ status: "0000", msg: "Login successfully!" });
 
             // user.platform
 
             // AWC Login
-            const resp_awc = await loginToAWC(user);
-console.log("after awc response..");
+
+           // const resp_awc = await loginToAWC(user);
+//console.log("after awc response..");
+
             // register SBO
           //  await registerToSBO(user.name, user.platform);
 
-            console.log(resp_awc);
-            console.log("after console..log..");
-            res.json(resp_awc);
+           // console.log(resp_awc);
+           // console.log("after console..log..");
+
+          //  res.json(resp_awc);
+
             // SBO Login
             // ... ... ...
         } catch (err) {
-            console.error("auth~~~try~~~: " + err.message);
+            console.error("auth~~~tryyyyy~~~: " + err.message);
             res.status(500).send("Server error");
         }
     }
