@@ -147,7 +147,7 @@ export const GameList = () => {
     };
 
     const notifyLogin = () =>
-        toast.error(t("Login first"), {
+        toast.info(t("Please login first"), {
             position: "top-right",
             autoClose: 1000,
             hideProgressBar: false,

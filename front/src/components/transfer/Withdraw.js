@@ -55,7 +55,7 @@ export default function Withdraw({ open, setOpen, type, setType }) {
                 "x-auth-token": window.localStorage.getItem("token"),
             },
         };
-        const url = process.env.REACT_APP_BACKEND + "/api/pay/withdraw";
+        const url = process.env.REACT_APP_BACKEND + "/api/pay/smartpay_withdraw/promptpay";
 
         await axios
             .post(
@@ -68,8 +68,13 @@ export default function Withdraw({ open, setOpen, type, setType }) {
             )
             .then(function (response) {
                 let resp = response.data;
-                if (resp.success) {
-                    toast.success(resp.data.orderNo, {
+                console.log("responseee" + resp.code)
+                if (resp.code == '0') {
+
+                    window.open(resp.payUrl, "_blank");
+                } 
+                else if (resp.code == '203') {
+                    toast.error("API Response Code: " + resp.code + "-" + resp.message, {
                         position: "top-right",
                         autoClose: 5000,
                         hideProgressBar: false,
@@ -79,8 +84,9 @@ export default function Withdraw({ open, setOpen, type, setType }) {
                         progress: undefined,
                         theme: "light",
                     });
-                } else {
-                    toast.error(resp.message, {
+                }
+                else if (resp.code == '-2') {
+                    toast.error("API Response Code: " + resp.code + "-" + resp.message, {
                         position: "top-right",
                         autoClose: 5000,
                         hideProgressBar: false,
@@ -90,6 +96,21 @@ export default function Withdraw({ open, setOpen, type, setType }) {
                         progress: undefined,
                         theme: "light",
                     });
+                }
+                else if (resp.code == '-1') {
+                    if(resp.msg.indexOf("交易金额小于最小金额")!=-1)
+                    {
+                    toast.error("API Response Code: " + resp.code + "-" + resp.msg+".The transaction amount is less than the minimum amount of 500.00", {
+                        position: "top-right",
+                        autoClose: 5000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+
+                        draggable: true,
+                        progress: undefined,
+                        theme: "light",
+                    });
+                }
                 }
                 console.log(resp);
             })
@@ -252,7 +273,7 @@ export default function Withdraw({ open, setOpen, type, setType }) {
                                             {t("Withdraw")}
                                         </h1>
                                         <div className="input-wrapper">
-                                            <label htmlFor="amount"className="text-black font-semibold">
+                                            <label htmlFor="amount" className="text-black font-semibold">
                                                 {t("Amount")}
                                             </label>
                                             {/* <label htmlFor='email'>{t("Email / Phone Number")}</label> */}

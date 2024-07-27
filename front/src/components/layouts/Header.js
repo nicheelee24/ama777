@@ -66,7 +66,7 @@ export const Header = () => {
         try {
             const res = await API.getUserBalance();
             setBalance(res.data.balance);
-            setTotalBetAmount(res.data.totalBetAmount);
+            setTotalBetAmount(res.data.totalTurnover);
             // debugger
         } catch (error) {
             // Handle error appropriately (e.g., log it, show a user-friendly message)
@@ -332,21 +332,21 @@ export const Header = () => {
 
                                     <div className="flex flex-col gap-1 md:gap-4 md:flex-row">
                                         <span className="text-white text-sm md:text-lg w-auto md:px-2 ">
-                                            {username}
+                                            {"Welcome, "+username+"! "}
                                         </span>
 
-                                        <div className="flex gap-3 items-center">
-                                            <span className="text-white text-sm md:text-lg">
+                                        <div className="flex gap-2 items-center">
+                                            <span className="text-white text-sm md:text-lg" style={{marginLeft:"-18px"}}>{"Balance: "}
                                                 {loadingBalance
                                                     ? "..."
                                                     : balance.toFixed(2) +
-                                                    "THB "}
-                                                <span className="text-[var(--logoutBg)]">
+                                                    " THB "}
+                                                <span className="text-[var(--logoutBg)]" style={{fontSize:"16px"}}>
                                                     {loadingBalance
                                                         ? "..."
-                                                        : " ( " +
+                                                        : " (Turnover: " +
                                                         totalBetAmount.toFixed(2) +
-                                                        " ) "}
+                                                        ")"}
                                                 </span>
                                             </span>
 

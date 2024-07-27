@@ -2,7 +2,7 @@
   "name": "dotbet",
   "version": "0.1.0",
   "private": true,
-    "dependencies": {
+  "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
