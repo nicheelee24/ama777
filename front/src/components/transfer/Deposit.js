@@ -53,8 +53,8 @@ export default function Deposit({ open, setOpen, type, setType }) {
                 "x-auth-token": window.localStorage.getItem("token"),
             },
         };
-        const url = process.env.REACT_APP_BACKEND + "/api/pay/smartpay/promptpay";
-
+        //const url = process.env.REACT_APP_BACKEND + "/api/pay/smartpay/promptpay";//deposit_bigpay
+        const url = process.env.REACT_APP_BACKEND + "/api/pay/deposit_bigpay";
         await axios
             .post(
                 url,
@@ -86,7 +86,7 @@ export default function Deposit({ open, setOpen, type, setType }) {
                             progress: undefined,
                             theme: "light",
                         });
-                        window.location.reload();
+                      //  window.location.reload();
 
                     }
                     else

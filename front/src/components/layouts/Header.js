@@ -13,8 +13,8 @@ import logo from "../../assets/img/teslla_logo2.png";
 
 import Update from "../../assets/update.svg";
 
-import LuckygaoLogo from "../../assets/img/Logo/emma-logo.jpg";
-import LuckygaoLogoSmall from "../../assets/img/luckygao_logo_small.png";
+import LuckyGaoLogo from "../../assets/img/Logo/emma-logo.jpg";
+import LuckyGaoLogoSmall from "../../assets/img/luckygao_logo_small.png";
 
 import Login from "../signs/Login";
 import ResetPassword from "../signs/ResetPassword";
@@ -140,7 +140,7 @@ export const Header = () => {
 
                     <img
                         src={
-                            isMobileDevice() ? LuckygaoLogo : LuckygaoLogo
+                            isMobileDevice() ? LuckyGaoLogo : LuckyGaoLogo
                         }
                         alt="Teslla"
                         className={`w-[65px] h-[auto] ml-2 ${expandMenuState ? "hidden" : "ml:flex"
@@ -241,6 +241,16 @@ export const Header = () => {
                                 >
                                     {/* <img src={signUp} alt='sign Up' className='mr-2' /> */}
                                     {t("Sign Up")}
+                                </button>
+                                <button
+                                    className="bg-transparent text-[var(--secondaryColor)] flex rounded justify-center items-center leading-[28px] py-[6px] px-[15px] md:px-[38px] border-2 border-[var(--secondaryColor)] on-mobile-views-login"
+                                    onClick={() => {
+                                        setOpen(true);
+                                        setType("promote");
+                                    }}
+                                >
+                                    {/* <img src={signUp} alt='sign Up' className='mr-2' /> */}
+                                    {t("Promote")}
                                 </button>
 
                                 {/* <span className="mx-4 w-8 h-8">

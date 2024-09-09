@@ -55,7 +55,7 @@ export default function Withdraw({ open, setOpen, type, setType }) {
                 "x-auth-token": window.localStorage.getItem("token"),
             },
         };
-        const url = process.env.REACT_APP_BACKEND + "/api/pay/smartpay_withdraw/promptpay";
+        const url = process.env.REACT_APP_BACKEND + "/api/pay/bigpayz_withdraw";
 
         await axios
             .post(

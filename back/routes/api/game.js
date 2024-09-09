@@ -201,6 +201,8 @@ router.get("/play/:id", auth, async (req, res) => {
     try {
         const game = await Game.findById(req.params.id);
         const user = await User.findById(req.user.id).select("-password");
+        let balance = user.balance;
+       
         let betLimit = {};
         let hall = null;
         let autoBetMode = null;
@@ -478,12 +480,19 @@ router.get("/play/:id", auth, async (req, res) => {
                 .request(options)
                 .then(function (response) {
                     console.log("response.data===", response.data);
-                    if (response.data.status == "0000") {
+                    if (response.data.status == "0000" && balance>0) {
                         res.json({
                             status: "0000",
                             session_url: response.data.url,
                         });
-                    } else {
+                    } 
+                    else if(balance<=0){
+                        res.json({
+                            status: "-1",
+                            desc: "Your Balance is 0. Please make deposit first.",
+                        });
+                    }
+                    else {
                         res.json({
                             status: response.data.status,
                             desc: response.data.desc,

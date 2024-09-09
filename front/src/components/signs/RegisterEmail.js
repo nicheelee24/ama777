@@ -1,10 +1,11 @@
 import React from "react";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useRef, useState,useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { setAuthInfoState } from "../../redux/reducers/loginState";
 import { Dialog, Transition } from "@headlessui/react";
 import "../../assets/css/login.css";
+
 import axios from "axios";
 
 import { ToastContainer, toast } from "react-toastify";
@@ -47,6 +48,7 @@ export default function RegisterEmail({ open, setOpen, type, setType }) {
 
     const [isAgree, setIsAgree] = useState(false);
     const [isReceive, setIsReceive] = useState(false);
+    const [mybets, setMybets] = useState([]);
 
     const bankLists = [
         "KBANK",
@@ -68,7 +70,39 @@ export default function RegisterEmail({ open, setOpen, type, setType }) {
         "ICBC",
         "LHBANK",
     ];
+    useEffect(() => {
+        fetchMyBets();
+    });
+    const fetchMyBets = async () => {
+        try {
+           // setLoading(true);
+           
 
+            const options = {
+                method: "POST",
+                url: process.env.REACT_APP_BACKEND + "/api/util/my-bet",
+                headers: {
+                    "content-type": "application/x-www-form-urlencoded",
+                    
+                },
+                
+            };
+
+            await axios
+                .request(options)
+                .then(function (response) {
+                    console.log("my bets data.."+response.data[0].gameName);
+                    setMybets(response.data);
+                   // setLoading(false);
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    //setLoading(false);
+                });
+        } catch (error) {
+            console.error("Error fetching mybets:", error);
+        }
+    };
     const handlePhoneChange = (e) => {
         const phoneNumber = e.target.value;
         // Regex for a basic international phone number check
@@ -283,7 +317,7 @@ export default function RegisterEmail({ open, setOpen, type, setType }) {
                             leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         >
-                            <Dialog.Panel className="overflow-auto md:overflow-hidden flex flex-col md:flex-row bg-[#181637] w-[817px] h-[796px] md:grid grid-cols-2 border border-[#2c2a4a] rounded-[12px]">
+                            <Dialog.Panel className="overflow-auto md:overflow-hidden flex flex-col md:flex-row bg-[#181637] w-[817px] h-[850px] md:grid grid-cols-2 border border-[#2c2a4a] rounded-[12px]">
                                 <div className="hidden md:flex left-side flex-col items-center justify-center">
                                     <img
                                         src={require("../../assets/img/Group1629.png")}
@@ -413,6 +447,29 @@ export default function RegisterEmail({ open, setOpen, type, setType }) {
                                         <div className="input-wrapper mt-5">
                                             <label htmlFor="bbn" className="!text-black font-semibold">
                                                 {t("Bank Name")}
+                                            </label>
+                                            <select
+                                                value={bbn}
+                                                onChange={handleBBNChange}
+                                                ref={bbnRef}
+                                                id="bbn"
+                                                className="rounded-lg px-6 mt-3"
+                                                autoFocus
+                                            >
+                                                {/* <option value="" disabled>{t("Select Bank")}</option> */}
+                                                {bankLists.map((bank) => (
+                                                    <option
+                                                        key={bank}
+                                                        value={bank}
+                                                    >
+                                                        {t(bank)}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="input-wrapper mt-5">
+                                            <label htmlFor="bbn" className="!text-black font-semibold">
+                                                {t("Promotion")}
                                             </label>
                                             <select
                                                 value={bbn}

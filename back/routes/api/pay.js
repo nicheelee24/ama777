@@ -22,8 +22,8 @@ router.post("/smartpay/:chanlType", auth, async (req, res) => {
 
     const chnlType = req.params.chanlType;
     const user = await User.findById(req.user.id).select("-password");
-    const bankCode = "T_BBL";
-    let customNo = "000777";
+    //const bankCode = "T_BBL";
+   // let customNo = "000777";
     let channleType;
     const url = "https://mgp-pay.com:8443";
     let endpoint;
@@ -117,10 +117,10 @@ router.post("/smartpay/:chanlType", auth, async (req, res) => {
                 // console.log("response..." + resonse.data);
                 const resp = resonse.data;
                 console.log("deposit response...."+resp.code);
-                
+                console.log(resp.msg);
                 if (resp.code != -1) {
                     console.log(resp['detail'].PayURL);
-                    res.send({ PayUrl: resp['detail'].PayURL, code: 0 });
+                    res.send({ PayUrl: resp['detail'].PayURL, code: 0,gateway:'spay' });
                     const dataToSignQuery = `date=${todayDateTime}&merchantNo=${merchantNo}&orderNo=${orderNo}&signType=${signType}&version=${version}${hashKey}`;
                     console.log(dataToSignQuery);
                     
@@ -154,7 +154,7 @@ router.post("/smartpay/:chanlType", auth, async (req, res) => {
                             let transaction = new Transaction({
                                 userid: req.user.id,
                                 platform: user.platform,
-                                userPhone: user.name,
+                                userPhone: user.phone,
                                 orderNo: orderNo,
                                 payAmount: req.body.amount,
                                 status: resp.msg,
@@ -169,7 +169,8 @@ router.post("/smartpay/:chanlType", auth, async (req, res) => {
                 }
                 else
                 {
-                    res.send({ PayUrl: '',msg:resp.msg, code: resp.code });
+                    console.log(resp.msg);
+                    res.send({ PayUrl: '',msg:resp.msg, code: resp.code,gateway:'spay' });
 
                 }
 
@@ -405,7 +406,7 @@ router.post("/smartpay_withdraw/:chanlType", auth, async (req, res) => {
                     let transaction = new Transaction({
                         userid: req.user.id,
                         platform: user.platform,
-                        userPhone: user.name,
+                        userPhone: user.phone,
                         orderNo: orderNo,
                         payAmount: req.body.amount,
                         status: resp.msg,
@@ -615,15 +616,29 @@ router.post("/deposit_bigpay", auth, async (req, res) => {
                     console.log(req.user.id);
 
                     try {
+                        // let transaction = new Transaction({
+                        //     userid: req.user.id,
+                        //     clientCode: '',
+                        //     payAmount: req.body.amount,
+                        //     trxNo: resp.invoice_number,
+                        //     token: resp.token,
+                        //     status: 'initiated',
+                        //     type: "deposit",
+                        //     platform: 'bigpayz',
+                        // });
+                        // transaction.save();
+
                         let transaction = new Transaction({
                             userid: req.user.id,
-                            clientCode: '',
+                            platform: 'luckyama',
+                            userPhone: user.phone,
+                            orderNo: ref_id,
                             payAmount: req.body.amount,
-                            trxNo: resp.invoice_number,
-                            token: resp.token,
                             status: 'initiated',
+                            responseCode: 0,
                             type: "deposit",
-                            platform: 'bigpayz',
+                            provider: 'bigpayz',
+                           // trxNo: resp.invoice_number,
                         });
                         transaction.save();
 
@@ -652,17 +667,17 @@ router.post("/deposit_bigpay", auth, async (req, res) => {
                     // res.json({ status: "0000"});
 
                     console.log("resulttt----->" + resp.redirect_to);
-                    res.send({ payUrl: resp.redirect_to, code: 0 });
+                    res.send({ PayUrl: resp.redirect_to, code: 0,gateway:'bpay' });
                 } else {
                     console.log("Error calling bigpay deposit function");
                     if (resp.error_code == 209) {
-                        res.send({ error: "API Response Code", code: resp.error_code, msg: resp.error_message, payUrl: "" });
+                        res.send({ error: "API Response Code", code: resp.error_code, msg: resp.error_message, PayUrl: "" });
                     }
                     else if (resp.error_code == 103) {
-                        res.send({ error: "API Response Code", code: resp.error_code, msg: resp.message, payUrl: "" });
+                        res.send({ error: "API Response Code", code: resp.error_code, msg: resp.message, PayUrl: "" });
                     }
                     else {
-                        res.send({ error: resp.error_message + "*", code: resp.error_code, payUrl: "" });
+                        res.send({ error: resp.error_message + "*", code: resp.error_code, PayUrl: "" });
                     }
 
 
@@ -830,7 +845,7 @@ router.post("/bigpayz_withdraw", auth, async (req, res) => {
 
         const bank_code = "KSKB";
         const beneficiary_account = user.bban;
-        const beneficiary_name = "Jirawat Inwongwan";
+        const beneficiary_name = user.bbun;
         const ifsc = "";
         const account_type = "";
         const address = "";
@@ -1264,16 +1279,23 @@ router.post("/balance", auth, async (req, res) => {
             },
         ]);
     }
-
+console.log("trans result"+resultTrans.length);
     let totalBetAmount = 0;
     let totalTurnover = 0;
     console.log("bet total result.." + result);
-    console.log("transaction amount..deposit.." + resultTrans[0].totalTransAmount);
+   // console.log("transaction amount..deposit.." + resultTrans[0].totalTransAmount);
 
-    if (result.length > 0) {
+    if (result.length > 0 ) {
         console.log("Total Bet Amount:", result[0].totalBetAmount);
         totalBetAmount = result[0].totalBetAmount;
+        if(resultTrans.length>0)
+        {
         totalTurnover = resultTrans[0].totalTransAmount - result[0].totalBetAmount;
+        if(totalTurnover<0)
+        {
+            totalTurnover=0;
+        }
+        }
     } else {
         console.log("No bets found or sum is zero");
     }
@@ -1349,16 +1371,29 @@ const getPhoneNumber = (txnUserId) => {
 // AWC HOOK FUNCTION
 router.post("/awc_hook", async (req, res) => {
     console.log("AWC CALLBACK awc_hook", req.body.message);
+   
     let req_val = JSON.parse(req.body.message);
     // "key": "SWGH308iLalAafVOdgDD",
     // "message": "{\"action\":\"getBalance\",\"userId\":\"swuserid\"}"
 
     // SAVE BET HISTORY
     if (req_val["action"] != "getBalance") {
+       // console.log("request.."+req_val["userId"]);
+        //const user = await User.findOne({
+           // phone: getPhoneNumber(req_val["userId"]),
+       // });
+       // console.log("user"+user.phone);
         // If the action is not getBalance, must save all bet history
-        req_val["txns"].map((txn, key) => {
+        req_val["txns"].map( async (txn, key) => {
+           //console.log("txn bets.."+txn.userId);
+            //console.log(req_val["txns"]);
+            const user = await User.findOne({
+                 phone: getPhoneNumber(txn.userId),
+             });
+           console.log("platform.."+user.platform);
             const bet = new Bet(txn);
             bet.action = req_val["action"];
+           bet.agentId=user.platform;
             bet.save()
                 .then((savedBet) => {
                     // Handle success, e.g., logging or sending a response

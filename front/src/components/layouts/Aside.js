@@ -10,7 +10,7 @@ import login from "../../assets/img/aside/login.png";
 import signup from "../../assets/img/aside/signup.png";
 // import logo from '../../assets/img/logo.svg'
 import logo from "../../assets/img/Logo/logos.png";
-import LuckygaoLogo from "../../assets/img/Logo/emma-logo.jpg";
+import LuckyGaoLogo from "../../assets/img/Logo/emma-logo.jpg";
 
 import Login from "../signs/Login";
 import ResetPassword from "../signs/ResetPassword";
@@ -92,6 +92,7 @@ export const Aside = () => {
             Text: t("Sign Up"),
             Type: "signup_email",
         },
+       
     ];
 
     const gameListLeft = [
@@ -242,7 +243,7 @@ export const Aside = () => {
                             >
                                 <a href="/" className="flex justify-center items-center">
                                     <img
-                                        src={LuckygaoLogo}
+                                        src={LuckyGaoLogo}
                                         alt="logo"
                                         className="w-[50%]"
                                     />
@@ -250,33 +251,7 @@ export const Aside = () => {
                                 </a>
                             </div>
                         </div>
-                        {/* Login / Signup */}
-                        {/* <div className={`flex flex-col my-2 mr-[5px] text-[14px] ${isLogin ? 'hidden' : ''}`}>
-                            {registerList.map((item, index) => {
-                                return (
-                                <div className='px-2 py-1 w-full'>
-                                    <button
-                                    key={index}
-                                    className='w-full py-2 flex items-center justify-center bg-[var(--primaryColor)]'
-                                    onClick={() => {
-                                        setOpen(true)
-                                        setType(item.Type)
-                                    }}
-                                    >
-                                    <div className='tooltip'>
-                                        <img
-                                        src={index === 0 ? login : signup}
-                                        alt={`${item.Type}`}
-                                        className='w-[30px]'
-                                        />
-                                        <span className="tooltiptext">{item.Text}</span>
-                                    </div>
-                                    <h1 className={`flex flex-col-1 text-center hover:text-[#42930E] text-[#737190] ${expandMenuState ? 'w-[100px] ml-[20px]' : 'hidden'}`}>{item.Text}</h1>
-                                    </button>
-                                </div>
-                                )
-                            })}
-                            </div> */}
+                        
 
                         <div className="w-full !px-2 mt-8 gap-2 flex">
                             <button
@@ -360,6 +335,7 @@ export const Aside = () => {
                 type={type}
                 setType={setType}
             />
+            
             <ResetPassword
                 open={open}
                 setOpen={setOpen}

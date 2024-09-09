@@ -175,10 +175,13 @@ export const GameList = () => {
                 "",
                 `width=${window.outerWidth}, height=${window.outerHeight}`
             );
-        } else {
+        } 
+        
+        
+        else {
             toast.error(res.data.desc, {
                 position: "top-right",
-                autoClose: 1000,
+                autoClose: 2000,
                 hideProgressBar: false,
                 closeOnClick: true,
 
