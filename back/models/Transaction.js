@@ -8,6 +8,19 @@ const transactionSchema = new mongoose.Schema({
     platform: {
         type: String,
     },
+    userPhone: {
+        type: String,
+    },
+    orderNo: {
+        type: String,
+    },
+    responseCode: {
+        type: String,
+    },
+    provider: {
+        type: String,
+    },
+   
     clientCode: {
         type: String,
     },

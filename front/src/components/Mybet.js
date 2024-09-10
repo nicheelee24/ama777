@@ -11,6 +11,7 @@ export const MyBet = () => {
     const [loading, setLoading] = useState(false);
 
     const handleGameChange = (event) => {
+        console.log(event);
         setSelectedGame(event.target.value);
     };
 
@@ -38,7 +39,7 @@ export const MyBet = () => {
             await axios
                 .request(options)
                 .then(function (response) {
-                    console.log(response.data);
+                    console.log("my bets data.."+response.data[0].gameName);
                     setMybets(response.data);
                     setLoading(false);
                 })
@@ -123,7 +124,7 @@ export const MyBet = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {currentBets.length < 0 ? (
+                                {currentBets.length > 0 ? (
                                     currentBets.map((bet, index) => (
                                         <tr className="text-white border-b border-[var(--logoutBg)]">
                                             <th

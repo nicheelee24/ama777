@@ -10,21 +10,547 @@ const fs = require("fs");
 const Transaction = require("../../models/Transaction");
 const User = require("../../models/User");
 const Bet = require("../../models/Bet");
+const Log = require("../../models/Log");
 const Bigp = require("../../models/Bigp");
+router.post("/smartpay_deposit_callback", auth, async (req, res) => {
+    console.log("smartpay callback request" + req)
+    console.log("smartpay callback response" + res)
 
+})
 
+router.post("/smartpay/:chanlType", auth, async (req, res) => {
 
-router.post("/bigpay", async (req, res) => {
+    const chnlType = req.params.chanlType;
+    const user = await User.findById(req.user.id).select("-password");
+    //const bankCode = "T_BBL";
+   // let customNo = "000777";
+    let channleType;
+    const url = "https://mgp-pay.com:8443";
+    let endpoint;
+    switch (chnlType) {
+        case "bank":
+            channleType = "1"
+            endpoint = "/api/pay/V2"
+            break;
+        case "truepay":
+            channleType = "2"
+            endpoint = "/api/pay/V2"
+            break;
+        case "promptpay":
+            channleType = "3"
+            endpoint = "/api/pay/V2"
+            break;
+    }
+
+    //SmartPay Bank Deposit API Parames
+    const version = "V2";
+    const signType = "MD5";
+    const merchantNo = "API1715848040266637";
+    const hashKey = "00cd33f68443416eafbb6f30e1499370";
+    const bizAmt = req.body.amount;
+    const noticeUrl = "http://206.206.77.139:5000/api/pay/smartpay_deposit_callback";
+    const orderNo = require('crypto').randomBytes(6).toString('hex').toUpperCase();
+    console.log(orderNo);
+
+    //DC Games API Credit API params
+    // const bill_no = require('crypto').randomBytes(10).toString('hex');
+    //  const brand_id = process.env.BRAND_ID;
+    // const brand_uid = customNo;
+    //  const dct_key = process.env.KEY_ID;
+    // const HASH = brand_id + brand_uid + dct_key;
+    // const hashh = require('crypto').createHash('md5').update(HASH).digest('hex').toString().toUpperCase();
+    //  const DEPOSIT_URL_DCT = `${process.env.DCT_BASE_URL}/dct/credit`;
+
     try {
 
-        console.log(req.body);
-        console.log("bigpay deposit function called..");
+        function generateMD5(data) {
+            const crypto = require('crypto');
+            const md5 = crypto.createHash('md5');
+            md5.update(data, 'utf8');
+            return md5.digest('hex');
+        }
+
+
+
+
+
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        const date = new Date();
+        const todayDateTime = formatter.format(date).replace(/\//g, '');
+
+        const dataToSign = `bizAmt=${bizAmt}&channleType=${channleType}&date=${todayDateTime}&merchantNo=${merchantNo}&noticeUrl=${noticeUrl}&orderNo=${orderNo}&signType=${signType}&version=${version}${hashKey}`;
+        console.log(dataToSign);
+
+        // Generate the MD5 signature
+        const sign = generateMD5(dataToSign);
+        console.log(sign);
+        await axios
+            .post(
+                url + endpoint,
+                {
+                    sign: sign,
+                    bizAmt: bizAmt,
+                    channleType: channleType,
+                    date: todayDateTime,
+                    merchantNo: merchantNo,
+                    noticeUrl: noticeUrl,
+                    orderNo: orderNo,
+                    signType: signType,
+                    version: version
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+
+                    },
+                }
+            )
+
+            .then(function (resonse) {
+                // console.log("response..." + resonse.data);
+                const resp = resonse.data;
+                console.log("deposit response...."+resp.code);
+                console.log(resp.msg);
+                if (resp.code != -1) {
+                    console.log(resp['detail'].PayURL);
+                    res.send({ PayUrl: resp['detail'].PayURL, code: 0,gateway:'spay' });
+                    const dataToSignQuery = `date=${todayDateTime}&merchantNo=${merchantNo}&orderNo=${orderNo}&signType=${signType}&version=${version}${hashKey}`;
+                    console.log(dataToSignQuery);
+                    
+                    const signQuery = generateMD5(dataToSignQuery);
+                    console.log(signQuery);
+                    endpoint = "/api/defray/queryV2";
+                    axios
+                        .post(
+                            url + endpoint,
+                            {
+                                sign: signQuery,
+                                date: todayDateTime,
+                                merchantNo: merchantNo,
+                                orderNo: orderNo,
+                                signType: signType,
+                                version: version
+                            },
+                            {
+                                headers: {
+                                    "Content-Type": "application/json",
+
+                                },
+                            }
+                        )
+
+                        .then(function (resonse) {
+                            // console.log("response..." + resonse.data);
+                            const resp = resonse.data;
+                            console.log(resp.status);
+
+                            let transaction = new Transaction({
+                                userid: req.user.id,
+                                platform: user.platform,
+                                userPhone: user.phone,
+                                orderNo: orderNo,
+                                payAmount: req.body.amount,
+                                status: resp.msg,
+                                responseCode: resp.code,
+                                action: 'initiated',
+                                type: "deposit",
+                                provider: 'smartpay',
+                            });
+                            transaction.save();
+                            console.log("Smart pay bank api response success..");
+                        })
+                }
+                else
+                {
+                    console.log(resp.msg);
+                    res.send({ PayUrl: '',msg:resp.msg, code: resp.code,gateway:'spay' });
+
+                }
+
+
+            })
+
+
+
+        //SAVE BALANCE TO DC GAMES API
+        // axios
+        // .post(
+        //  DEPOSIT_URL_DCT,
+        // {
+
+
+        // --- DCT CREDIT API PARAMS ---
+        //    brand_id: process.env.BRAND_ID,
+        //  sign: hashh,
+        //   brand_uid: brand_uid,
+        //   amount: bizAmt,
+        //   bill_no: bill_no,
+        //   currency: "THB",
+        //   country_code: "TH",
+        //    hrefbackUrl: process.env.CALLBACK_URL
+
+        // },
+        // {
+        // headers: {
+        //  "Content-Type": "application/json",
+
+        //  },
+        // }
+        // )
+        //  .then(function (response) {
+        //  const respp = response.data;
+        //  console.log("DCT api response..." + respp["code"]);
+        // if (respp["code"] == 1000) {
+        //  console.log("DCT balance credit success");
+
+
+
+
+
+
+        // }
+
+
+        // }
+
+
+
+
+
+    }
+    catch (ex) {
+        console.log(ex);
+    }
+});
+
+router.post("/smartpay_balance", async (req, res) => {
+
+
+    let customNo = "000007";
+    let channleType = "3";
+    const url = "https://mgp-pay.com:8443";
+    let endpoint = "/api/balance/V2";
+
+
+    //SmartPay Bank balance API Parames
+    const version = "V2";
+    const signType = "MD5";
+    const merchantNo = "API1715848040266637";
+    const hashKey = "00cd33f68443416eafbb6f30e1499370";
+
+
+    try {
+
+        function generateMD5(data) {
+            const crypto = require('crypto');
+            const md5 = crypto.createHash('md5');
+            md5.update(data, 'utf8');
+            return md5.digest('hex');
+        }
+
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        const date = new Date();
+        const todayDateTime = formatter.format(date).replace(/\//g, '');
+
+        const dataToSign = `channleType=${channleType}&date=${todayDateTime}&merchantNo=${merchantNo}&signType=${signType}&version=${version}${hashKey}`;
+        console.log(dataToSign);
+
+        // Generate the MD5 signature
+        const sign = generateMD5(dataToSign);
+        console.log(sign);
+        await axios
+            .post(
+                url + endpoint,
+                {
+                    sign: sign,
+                    channleType: channleType,
+                    date: todayDateTime,
+                    merchantNo: merchantNo,
+                    signType: signType,
+                    version: version
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+
+                    },
+                }
+            )
+
+            .then(function (resonse) {
+                console.log("response..." + resonse.data);
+                const resp = resonse.data;
+                console.log(resp);
+
+
+
+            })
+
+    }
+    catch (ex) {
+        console.log(ex);
+    }
+});
+
+router.post("/smartpay_withdraw/:chanlType", auth, async (req, res) => {
+    const user = await User.findById(req.user.id).select("-password");
+    const chnlType = req.params.chanlType;
+    const bankCode = "T_KBANK";
+    let accName = "Jirawat Inwongwan";
+    let channleType;
+    const url = "https://mgp-pay.com:8443";
+    let endpoint;
+    switch (chnlType) {
+        case "bank":
+            channleType = "1"
+            endpoint = "/api/defray/V2"
+            break;
+        case "truepay":
+            channleType = "2"
+            endpoint = "/api/defray/V2"
+            break;
+        case "promptpay":
+            channleType = "3"
+            endpoint = "/api/defray/V2"
+            break;
+    }
+
+    const version = "V2";
+    const signType = "MD5";
+    const merchantNo = "API1715848040266637";
+    const hashKey = "00cd33f68443416eafbb6f30e1499370";
+    const bizAmt = req.body.amount;
+    const noticeUrl = "http://206.206.77.139:5000/api/pay/deposit_smartpay_callback";
+    const orderNo = require('crypto').randomBytes(6).toString('hex').toUpperCase();
+    const bankBranchName = "KBANK";
+    const cardNo = "0513172036";
+    console.log(orderNo);
+
+
+    try {
+
+        function generateMD5(data) {
+            const crypto = require('crypto');
+            const md5 = crypto.createHash('md5');
+            md5.update(data, 'utf8');
+            return md5.digest('hex');
+        }
+
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        const date = new Date();
+        const todayDateTime = formatter.format(date).replace(/\//g, '');
+
+        const dataToSign = `accName=${accName}&bankBranchName=${bankBranchName}&bankCode=${bankCode}&bizAmt=${bizAmt}&cardNo=${cardNo}&channleType=${channleType}&date=${todayDateTime}&merchantNo=${merchantNo}&noticeUrl=${noticeUrl}&orderNo=${orderNo}&signType=${signType}&version=${version}${hashKey}`;
+        console.log(dataToSign);
+
+        // Generate the MD5 signature
+        const sign = generateMD5(dataToSign);
+        console.log(sign);
+        await axios
+            .post(
+                url + endpoint,
+                {
+                    sign: sign,
+                    accName: accName,
+                    bankBranchName: bankBranchName,
+                    bankCode: bankCode,
+                    bizAmt: bizAmt,
+                    cardNo: cardNo,
+                    channleType: channleType,
+                    date: todayDateTime,
+                    merchantNo: merchantNo,
+                    noticeUrl: noticeUrl,
+                    orderNo: orderNo,
+                    signType: signType,
+                    version: version
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+
+                    },
+                }
+            )
+
+            .then(function (resonse) {
+                console.log("response..." + resonse.data);
+                const resp = resonse.data;
+                console.log(resp.code);
+                console.log(resp.msg);
+
+                if (resp.code != '-1') {
+
+
+
+                    let transaction = new Transaction({
+                        userid: req.user.id,
+                        platform: user.platform,
+                        userPhone: user.phone,
+                        orderNo: orderNo,
+                        payAmount: req.body.amount,
+                        status: resp.msg,
+                        responseCode: resp.code,
+                        action: 'initiated',
+                        type: "withdraw",
+                        provider: 'smartpay',
+                    });
+                    transaction.save();
+                    User.findById(req.user.id)
+                        .then((user) => {
+                            user.balance =
+                                Number(user.balance) -
+                                Number(req.body.amount);
+                            user.save();
+                            console.log("user balance updated");
+                        })
+                        .catch((err) => {
+                            console.log(
+                                "/user balance update error user",
+                                err
+                            );
+                        });
+                    res.send({ code: resp.code })
+
+                }
+                else {
+                    if (resp.msg.indexOf("资金不足") != -1)//
+                    {
+                        let log = new Log({
+                            action: "Withdraw",
+                            code: resp.code,
+                            response: resp.msg,
+                            responseEN: resp.msg
+
+                        });
+                        log.save();
+
+
+                        res.send({ code: resp.code, msg: "Insufficient funds, balance." + resp.msg })
+                    }
+                    else {
+                        let log = new Log({
+                            action: "Withdraw",
+                            code: resp.code,
+                            response: resp.msg,
+                            responseEN: resp.msg
+
+                        });
+                        log.save();
+
+
+
+                        res.send({ code: resp.code, msg: resp.msg })
+
+                    }
+
+
+
+                }
+
+            })
+
+    }
+    catch (ex) {
+        console.log("Error:" + ex);
+    }
+})
+
+router.post("/balance_bigpay", async (req, res) => {
+    try {
+
+        //console.log(req.body);
+        console.log("bigpay balance api called..");
         const merchant_code = process.env.MerchantCode;
-        const ref_id = '3vghdg';
-        const player_username = 'player1';
-        const player_ip = '223.178.208.222';
+        const DEPOSIT_URL = `https://promptpay-api.bigpayz.net/Payout/GetBalance`;
+        const HASH = merchant_code;
+        const hashh = require('crypto').createHmac('sha256', "f1t0urr4LXprTuQuiDuHbsUBu7eTSD+vqxuvh16+IfY=").update(HASH).digest('hex');
+        await axios
+            .post(
+                DEPOSIT_URL,
+                {
+                    merchant_code: merchant_code,
+                    hash: hashh,
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        // "authorization": HASH,
+
+
+                        //"api-key": _key,
+                        //"time": current_time
+                        Authorization: `Basic ${process.env.BIGPAY_KEY}`,
+                    },
+                }
+
+
+            )
+            .then(function (resonse) {
+                console.log("response..." + resonse.data);
+                const resp = resonse.data;
+                console.log(resp);
+            })
+
+
+    }
+    catch (ex) {
+
+    }
+})
+
+
+router.post("/deposit_bigpay", auth, async (req, res) => {
+    try {
+
+        //console.log(req.body);
+        console.log("bigpay bank deposit function called..");
+        const user = await User.findById(req.user.id).select("-password");
+        //console.log(user.name);
+
+        //--BIGPAY BANK METHOD PARAMS
+
+        // const MerchantCode = process.env.MerchantCode;
+        // const ReturnURL = "http://148.113.3.153:3000/";
+        // const FailedReturnURL = "http://148.113.3.153:3000/error";
+        // const HTTPPostURL = "http://148.113.3.153:5000/api/pay/bank_deposit_return";
+        // const Amount = "50.00";
+        // const Currency = "THB";
+        // const ItemID = require('crypto').randomBytes(6).toString('hex');
+        // const ItemDescription = "bank payment";
+        // const PlayerId = user.phone.toString();
+        // const DEPOSIT_URL = `https://payin-api.bigpayz.net/payin/depositv2`;
+        // const HASH = MerchantCode + ItemID + Currency + Amount;
+        // const BankCode = "KSKB";
+
+        //-- BIGPAY QR CODE METHOD PARAMS
+
+        const merchant_code = process.env.MerchantCode;
+        const ref_id = require('crypto').randomBytes(6).toString('hex');;
+        const player_username = user.phone.toString();
+        const player_ip = process.env.PLAYER_IP;
         const currency_code = process.env.Currency;
-        const amount = '1000.00';
+        const amount = req.body.amount;
         const lang = process.env.LANGUAGE;
         const client_url = process.env.CLient_url;
         const view = process.env.VIEW;
@@ -37,13 +563,25 @@ router.post("/bigpay", async (req, res) => {
 
 
 
-        const hashh = require('crypto').createHash('md5', "2794398D881A4AAA8A3EB141232DEAD9").update(HASH).digest().toString('hex');
+        const hashh = require('crypto').createHmac('sha256', "f1t0urr4LXprTuQuiDuHbsUBu7eTSD+vqxuvh16+IfY=").update(HASH).digest('hex');
 
 
         await axios
             .post(
                 DEPOSIT_URL,
                 {
+                    // MerchantCode: MerchantCode,
+                    // ReturnURL: ReturnURL,
+                    // FailedReturnURL: FailedReturnURL,
+                    // HTTPPostURL: HTTPPostURL,
+                    // Amount: Amount,
+                    // Currency: Currency,
+                    // ItemID: ItemID,
+                    // ItemDescription: ItemDescription,
+                    // PlayerId: PlayerId,
+                    // BankCode: BankCode,
+                    // Hash: hashh,
+
                     merchant_code: merchant_code,
                     ref_id: ref_id,
                     player_username: player_username,
@@ -70,53 +608,78 @@ router.post("/bigpay", async (req, res) => {
                 }
             )
             .then(function (resonse) {
+                console.log("response..." + resonse.data);
+                const resp = resonse.data;
+                console.log(resp);
 
-                var myJSON = JSON.stringify(resonse.data)
-                console.log("response..." + myJSON);
-                if (resonse.data.httpCode > 200) {
+                if (resp.error_code == 0) {
+                    console.log(req.user.id);
 
+                    try {
+                        // let transaction = new Transaction({
+                        //     userid: req.user.id,
+                        //     clientCode: '',
+                        //     payAmount: req.body.amount,
+                        //     trxNo: resp.invoice_number,
+                        //     token: resp.token,
+                        //     status: 'initiated',
+                        //     type: "deposit",
+                        //     platform: 'bigpayz',
+                        // });
+                        // transaction.save();
 
-                    //  try {
-                    // let transaction = new Transaction({
-                    //     userid: req.user.id,
-                    //     clientCode: process.env.CLIENT_CODE,
-                    //     payAmount: resp.requestAmount,
-                    //     trxNo: resp.orderNo,
-                    //     sign: resp.sign,
-                    //     status: resp.status,
-                    //     type: "deposit",
-                    //     platform: platform,
-                    //  });
-                    // transaction.save();
+                        let transaction = new Transaction({
+                            userid: req.user.id,
+                            platform: 'luckyama',
+                            userPhone: user.phone,
+                            orderNo: ref_id,
+                            payAmount: req.body.amount,
+                            status: 'initiated',
+                            responseCode: 0,
+                            type: "deposit",
+                            provider: 'bigpayz',
+                           // trxNo: resp.invoice_number,
+                        });
+                        transaction.save();
 
-                    // User.findById(req.user.id)
-                    //     .then((user) => {
-                    //         user.balance =
-                    //             Number(user.balance) +
-                    //             Number(resp.requestAmount);
-                    //         user.save();
-                    //         console.log("user balance updated");
-                    //     })
-                    // .catch((err) => {
-                    //     console.log(
-                    //         "/user balance update error user",
-                    //         err
-                    //     );
-                    // });
-                    //   } catch (ex) {
-                    //console.log("/deposit error", ex);
-                    //  }
+                        User.findById(req.user.id)
+                            .then((user) => {
+                                user.balance =
+                                    Number(user.balance) +
+                                    Number(req.body.amount);
+                                user.save();
+                                console.log("user balance updated");
+                            })
+                            .catch((err) => {
+                                console.log(
+                                    "/user balance update error user",
+                                    err
+                                );
+                            });
+                    } catch (ex) {
+                        console.log("/deposit error", ex);
+                    }
 
                     //   res.send({ payUrl: resp.payUrl });
 
 
 
                     // res.json({ status: "0000"});
-                    const resp = response.data;
-                    console.log("resulttt----->" + resp);
-                    res.send({ payUrl: resp.redirect_to });
+
+                    console.log("resulttt----->" + resp.redirect_to);
+                    res.send({ PayUrl: resp.redirect_to, code: 0,gateway:'bpay' });
                 } else {
-                    console.log("errrrorororoor");
+                    console.log("Error calling bigpay deposit function");
+                    if (resp.error_code == 209) {
+                        res.send({ error: "API Response Code", code: resp.error_code, msg: resp.error_message, PayUrl: "" });
+                    }
+                    else if (resp.error_code == 103) {
+                        res.send({ error: "API Response Code", code: resp.error_code, msg: resp.message, PayUrl: "" });
+                    }
+                    else {
+                        res.send({ error: resp.error_message + "*", code: resp.error_code, PayUrl: "" });
+                    }
+
 
                 }
             });
@@ -211,13 +774,196 @@ router.post("/deposit", auth, async (req, res) => {
     }
 });
 
-router.post("/withdraw", auth, async (req, res) => {
+router.post("/bigpayz_withdraw", auth, async (req, res) => {
     try {
+        console.log("bigpay withdraw url called");
+        console.log(req.body);
+        const amount = req.body.amount;
+        const user = await User.findById(req.user.id).select("-password");
+        const WITHDRAW_URL = `https://payout-api.bigpayz.net/Payout/Withdrawal`;
 
+        if (Number(user.balance) < Number(amount)) {
+            res.send({
+                code: '-2',
+                success: false,
+                message: "Not Enough Balance!",
+            });
+
+            return;
+        }
+
+        // Start Check turnover
+        // check playing amount should be over withdrawal amount.
+        console.log("user data>" + user);
+
+        console.log("user data not empty");
+        const result = await Bet.aggregate([
+            {
+
+                $match: {
+
+                    userId: user.name,
+                    // action: { $in: ["bet", "betNSettle"] }, // Filters documents to include only those where action is either 'bet' or 'betNSettle'
+                },
+            },
+            {
+                $group: {
+                    _id: null, // Grouping by null means aggregating all documents together
+                    totalBetAmountt: { $sum: "$turnover" }, // Sums up all betAmount values
+                },
+            },
+        ]);
+        console.log("resuuulttt" + result);
+        console.log("result length" + result.length);
+
+        // console.log("resultt value...>"+resultt);
+
+        let totalBetAmount = 0;
+        if (result.length > 0) {
+            console.log("Total Bet Amount:", result[0].totalBetAmountt);
+            totalBetAmount = result[0].totalBetAmountt;
+        } else {
+            console.log("No bets found or sum is zero");
+        }
+
+        if (amount > totalBetAmount) {
+            // res.send({
+            //   code:0,
+            // success: false,
+            // message: "Not Enough Turnover!",
+            // });
+
+            //  return;
+        }
+        // End Check turnover
+
+        const merchant_code = process.env.MerchantCode;
+        const ref_id = require('crypto').randomBytes(6).toString('hex');;
+        const player_username = user.phone.toString();
+        const player_ip = "206.206.77.139";
+        const currency_code = "THB";
+
+        const bank_code = "KSKB";
+        const beneficiary_account = user.bban;
+        const beneficiary_name = user.bbun;
+        const ifsc = "";
+        const account_type = "";
+        const address = "";
+        const email = "";
+        const mobile = "";
+        const beneficiary_verification = "";
+
+
+        const HASH = merchant_code + ref_id + player_username + player_ip + currency_code + amount + bank_code + beneficiary_account + beneficiary_name;
+
+
+
+
+        const hashh = require('crypto').createHmac('sha256', "f1t0urr4LXprTuQuiDuHbsUBu7eTSD+vqxuvh16+IfY=").update(HASH).digest('hex');
+
+        await axios
+            .post(
+                WITHDRAW_URL,
+                {
+                    merchant_code: merchant_code,
+                    ref_id: ref_id,
+                    player_username: player_username,
+                    player_ip: player_ip,
+                    currency_code: currency_code,
+                    amount: amount,
+                    bank_code: bank_code,
+                    beneficiary_account: beneficiary_account,
+                    beneficiary_name: beneficiary_name,
+                    hash: hashh
+                    //ifsc: user.bbun,
+                    // account_type: user.bbn,
+                    // address: amount,
+                    // email:email,
+                    // mobile:mobile,
+                    // beneficiary_verification:beneficiary_verification
+
+
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Basic ${process.env.BIGPAY_KEY}`
+                    },
+                }
+            )
+            .then(function (response) {
+                console.log("bigpay response...");
+                console.log(response.data);
+                if (response.data.error_code == 203) {
+                    res.send({
+                        code: '203',
+                        success: false,
+                        message: response.data.message,
+
+                    });
+                }
+                else {
+
+                }
+                /*
+                {
+                    success: true,
+                    httpCode: 200,
+                    data: {
+                    orderNo: 'PYXLMVI0000042',
+                    requestAmount: 100,
+                    status: 'PAYING',
+                    sign: '02443457e4fae3201168a7f03359adc8'
+                    }
+                }
+                */
+                if (response.data.success) {
+                    const { orderNo, requestAmount, status, sign } =
+                        response.data.data;
+                    try {
+                        let transaction = new Transaction({
+                            userid: req.user.id,
+                            clientCode: process.env.CLIENT_CODE,
+                            payAmount: requestAmount,
+                            trxNo: orderNo,
+                            sign: sign,
+                            status: status,
+                            type: "withdraw",
+                            platform: platform,
+                        });
+                        transaction.save();
+
+                        User.findById(req.user.id)
+                            .then((user) => {
+                                user.balance =
+                                    Number(user.balance) -
+                                    Number(requestAmount);
+                                user.save();
+                            })
+                            .catch((err) => {
+                                console.log(
+                                    "/withdrawal_callback error user",
+                                    err
+                                );
+                            });
+                    } catch (ex) {
+                        console.log("/withdraw error", ex);
+                    }
+                }
+                res.send(response.data);
+            });
+    } catch (ex) {
+        console.log("Error Exception On Deposit", ex);
+    }
+});
+
+router.post("/withdraw_old", auth, async (req, res) => {
+    try {
+        console.log("bigpay withdraw url called");
         const { amount, platform } = req.body;
         console.log(req.body);
         const user = await User.findById(req.user.id).select("-password");
-        const WITHDRAW_URL = `${process.env.PMG_BASE_URL}/api/v1/Payout/Withdraw`;
+        const WITHDRAW_URL = `https://payout-api.bigpayz.net/Payout/Withdrawal`;
 
         if (Number(user.balance) < Number(amount)) {
             res.send({
@@ -345,6 +1091,8 @@ router.post("/withdraw", auth, async (req, res) => {
 });
 
 router.post("/deposit_callback", async (req, res) => {
+    console.log("deposit_callback called.." + res.body)
+    console.log("deposit_callback called.." + req.body)
     const {
         clientCode,
         sign,
@@ -491,7 +1239,7 @@ router.post("/balance", auth, async (req, res) => {
     let resultTrans = null;
     console.log("usser id...." + req.user.id);
     const user = await User.findById(req.user.id);
-    const trans = await Transaction.findById(req.user.id);
+    const trans = await Transaction.findOne({ userid: req.user.id });
     console.log("user data..." + user);
     console.log("transactin data..." + trans);
     if (user) {
@@ -517,8 +1265,10 @@ router.post("/balance", auth, async (req, res) => {
         resultTrans = await Transaction.aggregate([
             {
                 $match: {
-                    userid: user._id,
-                    action: { $in: ["type", "deposit"] }, // Filters documents to include only those where action is either 'bet' or 'betNSettle'
+                    userPhone: user.phone,
+                    type: "deposit",
+                    responseCode: "0"
+                    //  action: { $in: ["type", "deposit"] }, // Filters documents to include only those where action is either 'bet' or 'betNSettle'
                 },
             },
             {
@@ -529,19 +1279,28 @@ router.post("/balance", auth, async (req, res) => {
             },
         ]);
     }
-
+console.log("trans result"+resultTrans.length);
     let totalBetAmount = 0;
+    let totalTurnover = 0;
     console.log("bet total result.." + result);
-    console.log("transaction amount..deposit.." + resultTrans);
+   // console.log("transaction amount..deposit.." + resultTrans[0].totalTransAmount);
 
-    if (result.length > 0) {
+    if (result.length > 0 ) {
         console.log("Total Bet Amount:", result[0].totalBetAmount);
         totalBetAmount = result[0].totalBetAmount;
+        if(resultTrans.length>0)
+        {
+        totalTurnover = resultTrans[0].totalTransAmount - result[0].totalBetAmount;
+        if(totalTurnover<0)
+        {
+            totalTurnover=0;
+        }
+        }
     } else {
         console.log("No bets found or sum is zero");
     }
 
-    res.json({ balance, totalBetAmount });
+    res.json({ balance, totalTurnover });
 });
 
 // playing balance
@@ -612,16 +1371,29 @@ const getPhoneNumber = (txnUserId) => {
 // AWC HOOK FUNCTION
 router.post("/awc_hook", async (req, res) => {
     console.log("AWC CALLBACK awc_hook", req.body.message);
+   
     let req_val = JSON.parse(req.body.message);
     // "key": "SWGH308iLalAafVOdgDD",
     // "message": "{\"action\":\"getBalance\",\"userId\":\"swuserid\"}"
 
     // SAVE BET HISTORY
     if (req_val["action"] != "getBalance") {
+       // console.log("request.."+req_val["userId"]);
+        //const user = await User.findOne({
+           // phone: getPhoneNumber(req_val["userId"]),
+       // });
+       // console.log("user"+user.phone);
         // If the action is not getBalance, must save all bet history
-        req_val["txns"].map((txn, key) => {
+        req_val["txns"].map( async (txn, key) => {
+           //console.log("txn bets.."+txn.userId);
+            //console.log(req_val["txns"]);
+            const user = await User.findOne({
+                 phone: getPhoneNumber(txn.userId),
+             });
+           console.log("platform.."+user.platform);
             const bet = new Bet(txn);
             bet.action = req_val["action"];
+           bet.agentId=user.platform;
             bet.save()
                 .then((savedBet) => {
                     // Handle success, e.g., logging or sending a response

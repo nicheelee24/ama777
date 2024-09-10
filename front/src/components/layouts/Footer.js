@@ -173,7 +173,7 @@ export const Footer = () => {
                     <div className="left-area-footer-why">
                         <h1 className="pt-10">{t("Why AMA 777?")}</h1>
                         <p className="mt-8">{t("The Widest Selection of Games. At AMA 777, we believe that variety is the spice of life. Whether you're a fan of casino games, a sports betting enthusiast, or simply looking for new challenges, we've got you covered. Our gaming hub is constantly updated with the latest and greatest offerings, from card games and slot machines, to competitive sports betting, and more!")}</p>
-                        <p className="mt-4">{t("Interested in elevating your gaming and earning experience? AMA 777 is offering you a golden opportunity you don't want to miss. Join our affiliate program and earn incredible commissions, up to a staggering 60%, along with enticing incentives and cashback rewards!")}</p>
+                        <p className="mt-4">{t("Interested in elevating your gaming and earning experience? LuckyGao is offering you a golden opportunity you don't want to miss. Join our affiliate program and earn incredible commissions, up to a staggering 60%, along with enticing incentives and cashback rewards!")}</p>
                         <h1 className="mt-9 mb-8">{t("Join Our Community")}</h1>
                         <div className="flex items-center social-icons-footer">
                             <a href="/" className="mr-3">
@@ -324,7 +324,7 @@ export const Footer = () => {
                             {/* </a> */}
                         </div>
                         <p className="mt-5">{t("Welcome to AMA 777")}</p>
-                        <p>{t("We're not just another name in the online gaming world; we represent the future of entertainment. We bring you a fantastic mix of casino games, sports betting, and a variety of other interactive experiences—all powered by the revolutionary Web3 technology. With AMA 777, we invite you on a gaming adventure that's both exciting and thrilling, offering an absolute blend of fun and the joy of winning!")}</p>
+                        <p>{t("We're not just another name in the online gaming world; we represent the future of entertainment. We bring you a fantastic mix of casino games, sports betting, and a variety of other interactive experiences—all powered by the revolutionary Web3 technology. With LuckyGao, we invite you on a gaming adventure that's both exciting and thrilling, offering an absolute blend of fun and the joy of winning!")}</p>
                     </div>
                     <div className="right-area">
                         <h1 className="mb-7">{t("So what?")}</h1>

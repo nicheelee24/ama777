@@ -50,18 +50,15 @@ export default function Deposit({ open, setOpen, type, setType }) {
         const config = {
             headers: {
                 "content-type": "application/json",
-               // 'Authorization': 'Basic NWZiUnBoUWl1ZEVBTEZoVUM0QnEyTzBselBPTElhS0Q6'
                 "x-auth-token": window.localStorage.getItem("token"),
             },
         };
-          const url = process.env.REACT_APP_BACKEND + "/api/pay/deposit";
-       // const url = process.env.REACT_APP_BACKEND + "/api/pay/bigpay-deposit";
-
+        //const url = process.env.REACT_APP_BACKEND + "/api/pay/smartpay/promptpay";//deposit_bigpay
+        const url = process.env.REACT_APP_BACKEND + "/api/pay/deposit_bigpay";
         await axios
             .post(
                 url,
                 {
-                  
                     amount: amountRef.current.value,
                     currency: "baht",
                     platform: process.env.REACT_APP_PLATFORM,
@@ -70,19 +67,57 @@ export default function Deposit({ open, setOpen, type, setType }) {
             )
             .then(function (response) {
                 let resp = response.data;
-                console.log("resppp"+resp);
-                window.open(resp.payUrl, "_blank");
+                console.log(resp);
+                if(resp.code=='0')
+                {
+               // window.open(resp.payUrl, "_blank");
+               window.open(resp.PayUrl,"_self");
+                }
+                else
+                {
+                    if(resp.msg=='>无银行卡可用')
+                    {
+                        toast.warning("API Response Code: "+resp.code+"-"+resp.msg+".(No bank card available)", {
+                            position: "top-right",
+                            autoClose: 10000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            draggable: true,
+                            progress: undefined,
+                            theme: "light",
+                        });
+                      //  window.location.reload();
+
+                    }
+                    else
+                    {
+                        toast.warning("API Response Code: "+resp.code+"-"+resp.msg+". Please try again later.", {
+                            position: "top-right",
+                            autoClose: 10000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            draggable: true,
+                            progress: undefined,
+                            theme: "light",
+                        });
+                    }
+                   
+                   
+                   
+                
+               
+
+                }
             })
             .catch(function (err) {
                 console.log(err);
 
-                toast.error("Error is occurred"+err, {
+                toast.error("Login or function error.", {
                     position: "top-right",
                     autoClose: 5000,
                     hideProgressBar: false,
                     closeOnClick: true,
                     draggable: true,
-
                     progress: undefined,
                     theme: "light",
                 });
@@ -235,7 +270,7 @@ export default function Deposit({ open, setOpen, type, setType }) {
                                             {t("Deposit")}
                                         </h1>
                                         <div className="input-wrapper">
-                                            <label htmlFor="amount" className="text-black font-bold">
+                                            <label htmlFor="amount"  className="text-black font-bold">
                                                 {t("Amount")}
                                             </label>
                                             {/* <label htmlFor='email'>{t("Email / Phone Number")}</label> */}

@@ -46,5 +46,9 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    status: {
+        // luckygao, dotbet, bandai ....
+        type: String,
+    },
 });
 module.exports = mongoose.model("users", userSchema);

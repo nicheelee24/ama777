@@ -7,6 +7,9 @@ const betSchema = new mongoose.Schema({
     userId: {
         type: String,
     },
+    agentId: {
+        type: String,
+    },
     gameType: {
         type: String,
     },

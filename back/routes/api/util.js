@@ -22,7 +22,9 @@ router.post("/announce", auth, async (req, res) => {
 // Method POST
 // Middleware auth
 router.post("/financial-report", auth, async (req, res) => {
+    console.log("financial report called....");
     const { fromDate, toDate } = req.body;
+    
     console.log(fromDate, toDate);
     const user = await User.findById(req.user.id);
     const phone = user.phone;
@@ -140,6 +142,7 @@ router.post("/financial-report", auth, async (req, res) => {
 // Method POST
 // Middleware auth
 router.post("/my-bet", auth, async (req, res) => {
+    console.log("my bets function called..");
     const user = await User.findById(req.user.id);
     const { gameType } = req.body;
 
@@ -153,7 +156,8 @@ router.post("/my-bet", auth, async (req, res) => {
         filter.gameType = gameType;
     }
 
-    const bets = await Bet.find(filter);
+    const bets = await Bet.find(filter).sort( { date: -1 } );
+    //console.log(bets);
     res.json(bets);
 });
 

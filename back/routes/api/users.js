@@ -77,6 +77,7 @@ console.log("agents data.."+agent);
                 platform, // dotbet, luckygao lucky888 ... ... ...
                 origin: "web",
                 deptime: 0,
+                status:"Active"
             });
 
             const salt = await bcrypt.genSalt(10);
@@ -134,11 +135,11 @@ console.log("user password.."+user.password);
                                 maxdraw: 4000, // 100
                             },
                         },
-                        VENUS: {
-                            LIVE: {
-                                limitId: [280902, 280903], // [110901,110902]
-                            },
-                        },
+                        // VENUS: {
+                        //     LIVE: {
+                        //         limitId: [280902, 280903], // [110901,110902]
+                        //     },
+                        // },
                     }),
                     language: "en",
                     userName: user.name,

@@ -80,11 +80,11 @@ async function loginToAWC(user) {
                         maxdraw: 4000, // 100
                     },
                 },
-                VENUS: {
-                    LIVE: {
-                        limitId: [280902, 280903], // [110901,110902]
-                    },
-                },
+                // VENUS: {
+                //     LIVE: {
+                //         limitId: [280902, 280903], // [110901,110902]
+                //     },
+                // },
             }),
             autoBetMode: "1",
         },
@@ -168,6 +168,7 @@ router.post(
                     .json({ errors: [{ msg: "Invalid Credentials1" }] });
             }
 
+           
             const isMatch = await bcrypt.compare(password, user.password);
             console.log(password, user.password);
             if (!isMatch) {
