@@ -12,6 +12,7 @@ const User = require("../../models/User");
 
 
 router.get("/getpromotions", async (req, res) => {
+    console.log("function called");
     try {
         let promotionsList = await Promotion.find({
             agentname: "luckyama",
