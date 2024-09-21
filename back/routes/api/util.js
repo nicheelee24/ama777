@@ -141,24 +141,25 @@ router.post("/financial-report", auth, async (req, res) => {
 // My Bet List
 // Method POST
 // Middleware auth
-router.post("/my-bet", auth, async (req, res) => {
-    console.log("my bets function called..");
-    const user = await User.findById(req.user.id);
-    const { gameType } = req.body;
 
-    let filter = {
-        userId: user.name,
-        betTime: { $gte: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) }, // 5 days in milliseconds
-    };
+// router.post("/my-bet", auth, async (req, res) => {
+//     console.log("my bets function called..");
+//     const user = await User.findById(req.user.id);
+//     const { gameType } = req.body;
 
-    // Only add gameType to the filter if it's provided and not equal to "All"
-    if (gameType && gameType !== "All") {
-        filter.gameType = gameType;
-    }
+//     let filter = {
+//         userId: user.name,
+//         betTime: { $gte: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) }, // 5 days in milliseconds
+//     };
 
-    const bets = await Bet.find(filter).sort( { date: -1 } );
-    //console.log(bets);
-    res.json(bets);
-});
+//     // Only add gameType to the filter if it's provided and not equal to "All"
+//     if (gameType && gameType !== "All") {
+//         filter.gameType = gameType;
+//     }
+
+//     const bets = await Bet.find(filter).sort( { date: -1 } );
+//     //console.log(bets);
+//     res.json(bets);
+// });
 
 module.exports = router;

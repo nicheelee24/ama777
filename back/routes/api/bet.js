@@ -23,17 +23,6 @@ router.get("/mybets", async (req, res) => {
         res.status(500).send("Server Error");
     }
 });
-router.get("/promote", async (req, res) => {
-    try {
-        let myBets = await Bet.find({
-            userId: "am7000877",
-           
-        }).limit(50);
-        res.json({ status: "0000", myBets });
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Server Error");
-    }
-});
+
 
 module.exports = router;
